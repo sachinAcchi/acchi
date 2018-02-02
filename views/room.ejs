@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name='description' content='LibreERP-WebConnect' />
+	<meta name='viewport' content='width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1'>
+	<script>
+		var HOST_ADDRESS = '<%= hostAddress %>';
+	</script>
+	<script>
+		var USER_ID = '<%= userID %>';
+	</script>
+	<script>
+		var PRESENTER_ID = '<%= presenter %>';
+	</script>
+	<link rel="stylesheet" type="text/css" href="/css/room.css" media="screen" />
+	<link rel="stylesheet" href="/css/bootstrap.min.css" charset="utf-8">
+	<link rel="stylesheet" href="/css/font-awesome.min.css" charset="utf-8">
+
+	<title>Video Conference</title>
+</head>
+
+<body ng-app="app" style="overflow: hidden;">
+
+	<div ng-controller="main">
+
+		<div class="col-md-9" style="padding:0px;height:100vh;background-image: url('/images/background.png');background-size:cover;">
+
+			<div ng-if="screenMode == 'details'" class="container-fluid">
+				<h2>Meeting details</h2>
+				<p>
+					Meeting ID : {{room}}
+				</p>
+			</div>
+
+			<div ng-if="screenMode == 'waiting'" class="container-fluid">
+				<h2>Waiting for presenter stream</h2>
+			</div>
+
+			<div ng-if="screenMode == 'stream'" id="videosWrapper" style="width: 100%;height:100vh;">
+
+			</div>
+		</div>
+		<div class="col-md-3" style="padding:0px;">
+			<div class="col-md-2" style="background-color:#302c2c;margin:0px;height:100vh;padding:0px;">
+				<div style="top:0px;height:10vh;background-color:#eeeeee;width:100%;margin:0px;padding-top:10px;" class="text-center col-md-12">
+					<i class="fa fa-sign-out fa-lg text-danger"></i> <br>
+					<span class="text-danger" style="margin-left:-5px;font-size:11px;">Exit</span>
+				</div>
+
+				<div style="text-align:center;">
+					<span class="fa-stack fa-lg" style="margin-top:10px;cursor:pointer;" ng-click="toggle('mic')">
+						<i class="fa fa-circle fa-2x fa-stack-2x" style="color:{{ user.mic? '#30af24':'#cc3636'}};font-size:45px;"></i>
+						<i class="fa fa-microphone{{ user.mic? '':'-slash'}} fa-stack-1x fa-inverse" style="margin-top: 5px;margin-left:0px;"></i>
+					</span>
+
+					<br>
+					<!-- <br>
+					<span class="fa-stack fa-lg" style="margin-top:10px;cursor:pointer;" ng-click="toggle('screen')">
+						<i class="fa fa-circle fa-2x fa-stack-2x" style="color:{{ user.screen? '#30af24':'#606060'}};font-size:45px;"></i>
+						<i class="fa fa-desktop fa-stack-1x fa-inverse" style="margin-top: 5px;margin-left:0px;"></i>
+					</span>
+
+					<br> -->
+					<br>
+					<span class="fa-stack fa-lg" style="margin-top:10px;cursor:pointer;" ng-click="toggle('video')">
+						<i class="fa fa-circle fa-2x fa-stack-2x" style="color:{{ user.video? '#30af24':'#606060'}};font-size:45px;"></i>
+						<i class="fa fa-video-camera fa-stack-1x fa-inverse" style="margin-top: 5px;margin-left:0px;"></i>
+					</span>
+					<br>
+					<br>
+					
+					<span class="fa-stack fa-lg" style="margin-top:10px;cursor:pointer;" ng-click="toggle('screen')">
+					<a href="" onclick=window.open("/new/screen.html","ScreenWindow","width=700,height=400","status=1,toolbar=1","pull-center");>
+						<i class="fa fa-circle fa-2x fa-stack-2x" style="color:{{ user.screen? '#606060':'#606060'}};font-size:45px;"></i>
+						<i class="fa fa-share-square-o fa-stack-1x fa-inverse" title="Screen share" style="margin-top: 5px;margin-left:0px;"></i>
+						</a>
+						
+					</span>
+					
+				</div>
+
+			
+
+				<br>
+				<hr style="border-top:#828282 solid 1px;margin-bottom:0px;">
+
+				<div class="tabbedOption" ng-click="changeContentTab('users')" style="background-color:{{active=='users'? 'white':''}};">
+					<i class="fa fa-lg fa-users {{active!='users'? 'fa-inverse':''}}"></i>
+				</div>
+				<div class="tabbedOption" ng-click="changeContentTab('chat')" style="background-color:{{active=='chat'? 'white':''}};">
+					<i class="fa fa-lg fa-comments {{active!='chat'? 'fa-inverse':''}}"></i>
+					<span ng-if="data.unreadCount>0" class="label label-danger">{{data.unreadCount}}</span>
+				</div>
+				<div class="tabbedOption" ng-click="changeContentTab('settings')" style="background-color:{{active=='settings'? 'white':''}};">
+					<i class="fa fa-lg fa-cogs {{active!='settings'? 'fa-inverse':''}}"></i>
+				</div>
+
+				<div class="tabbedOption" ng-click="changeContentTab('film')" style="background-color:{{active=='film'? 'white':''}};">
+					<i class="fa fa-lg fa-window-restore {{active!='film'? 'fa-inverse':''}}"></i>
+				</div>
+
+				<div  style="bottom:0px;position:absolute;width:100%;">
+
+					<div class="tabbedOption" ng-click="toggleRecorder()">
+						<i ng-if="recordMode=='play'" class="fa fa-lg fa-video-camera fa-inverse" style="color:#cc3636;"></i>
+						<i ng-if="recordMode=='pause'" class="fa fa-lg fa-pause fa-inverse" ></i>
+						<i ng-if="recordMode=='resume'" class="fa fa-lg fa-play fa-inverse" ></i>
+					</div>
+
+					<div class="tabbedOption" ng-click="saveRecording()">
+						<i class="fa fa-lg fa-floppy-o fa-inverse"></i>
+					</div>
+					<div class="tabbedOption" ng-click="enterFullScreen()">
+						<i class="fa fa-lg fa-expand fa-inverse"></i>
+					</div>
+				</div>
+
+
+			</div>
+			<div class="col-md-10">
+				<div class="row" style="border-bottom:solid 2px #eeeeee;height:10vh;">
+					<img src="/images/ciocLogo.jpg" style="width:100px;" alt=""> <br>
+					<span style="color:#2b71e2;font-size:14px; padding-left:15px;">WebConnect</span>
+				</div>
+				<div class="row">
+
+
+					<div ng-if="active == 'film'" style="height:90vh;overflow:auto;">
+
+						<div class="container-fluid">
+
+							<h4 class="text-muted">Other users</h4>
+							<div ng-repeat="u in users">
+								<div id="sm{{u.id}}" >
+								</div>
+								<div class="text-center">
+									<span class="text-muted">{{u.name}}</span>
+								</div>
+							</div>
+						</div>
+
+					</div>
+					<div ng-if="active=='users'" class="container-fluid" style="padding-top:20px;">
+						<span style="font-size:17px;" class="text-muted">Participants</span>
+						<i ng-if="user.admin" ng-click="muteAll()" class="fa fa-microphone-slash text-danger pull-right" style="padding-top:10px;cursor:pointer;"> mute all</i>
+						<div class="row" style="margin-top:20px;">
+							<div style="padding:10px;border-bottom:solid 1px #eeeeee;border-top:solid 1px #eeeeee;padding-left:15px;">
+								<i class="fa fa-microphone{{!user.mic? '-slash text-danger':''}}"></i>
+								<span style="position:absolute;left:50px;">{{user.name}}</span>
+								<span class="pull-right text-muted">{{user.admin?'Organizer': ''}}{{user.admin && user.presenting ? ' , ':''}} {{user.presenting?'Presenter':''}}
+									<span style="cursor:pointer;" ng-if="user.admin && !user.presenting" class="text-primary" ng-click="present()"> Present</span>
+								</span>
+
+							</div>
+						</div>
+						<div ng-repeat="u in users track by $index">
+							<div class="row">
+								<div style="padding:10px;border-bottom:solid 1px #eeeeee;padding-left:15px;">
+									<i class="fa fa-microphone{{!u.mic?'-slash text-danger':''}}"></i>
+									<span style="position:absolute;left:50px;">{{u.name}}</span>
+
+									<div class="dropdown pull-right" ng-if="user.admin">
+										<i class="fa fa-angle-down  dropdown-toggle" style="cursor:pointer;margin-left:10px;" data-toggle="dropdown"></i>
+										<ul class="dropdown-menu">
+											<li><a href="" ng-click="userOption($index , 'makePresenter')">{{ !u.presenting?'Make':'Remove'}} presenter</a></li>
+											<!-- <li><a href="" ng-click="userOption($index , 'sendMessage' )">Send message</a></li> -->
+										</ul>
+									</div>
+									<span class="pull-right text-muted">{{u.admin?'Organizer': ''}}{{u.admin && u.presenting ? ' , ':''}} {{u.presenting?'Presenter':''}}</span>
+								</div>
+							</div>
+
+						</div>
+
+					</div>
+
+					<div ng-if="active=='chat'" style="position:absolute;height:90vh;width:100%;" >
+
+						<div style="overflow:auto;height: 82vh;border-bottom:2px solid #bbbbbb;">
+							<div  ng-repeat="m in data.messages track by $index" style="margin:6px;margin-bottom:15px;padding:5px;border:1px solid #769f39;border-radius:3px;">
+								<div style="padding-left:20px;padding-right:20px;">
+									<div class="row text-primary">
+										{{m.sender}}
+									</div>
+									<div class="row">
+										{{m.text}}
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div style="position:absolute;bottom:0px;right:0px;width:100%;" >
+							<div class="container-fluid" style="padding:2vh;">
+								<input ng-enter="sendMessage()" type="text" ng-model="message.text" class="form-control">
+							</div>
+						</div>
+					</div>
+
+					<div ng-if="active=='settings'">
+						<h4 class="text-muted" style="margin-left:15px;">Preview</h4>
+						<video style="width:100%;" id="localVideo" autoplay="autoplay"></video>
+					</div>
+				</div>
+			</div>
+
+
+
+		</div>
+
+	</div>
+
+	<script src="/js/jquery-2.1.4.min.js"></script>
+	<script src="/js/jquery.cookie-1.4.1.min.js"></script>
+	<!-- <script src="//cdn.firebase.com/v0/firebase.js"></script> -->
+	<!-- <script src="//cdn.webrtc-experiment.com/screen.js"></script> -->
+	<!-- <script src="//cdn.webrtc-experiment.com/getScreenId.js"></script> -->
+	<script src="/js/bootstrap.min.js"></script>
+	<script src="/js/MediaStreamRecorder.js"></script>
+	<script src='/socket.io/socket.io.js'></script>
+	<script src='/js/lib/adapter.js'></script>
+	<script src="/js/angular.min.js"></script>
+	<script src="/js/angular-sanitize.min.js"></script>
+	<script src="/js/ui-bootstrap-tpls-0.14.3.min.js"></script>
+	<script src='/js/meeting.js'></script>
+	<script src='/js/room.js'></script>
+
+
+</body>
+
+</html>
